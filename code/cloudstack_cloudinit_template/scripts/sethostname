@@ -1,0 +1,27 @@
+#!/bin/sh
+# dhclient change hostname script for Ubuntu
+oldhostname=$(hostname -s)
+if [ $oldhostname = 'localhost' ]
+then
+    sleep 10 # Wait for configuration to be written to disk
+    hostname=$(cat /var/lib/dhcp/dhclient.eth0.leases  |  awk ' /host-name/ { host = $3 }  END { printf host } ' | sed     's/[";]//g' )
+    fqdn="$hostname.$(cat /var/lib/dhcp/dhclient.eth0.leases  |  awk ' /domain-name/ { domain = $3 }  END { printf     domain } ' | sed 's/[";]//g')"
+    ip=$(cat /var/lib/dhcp/dhclient.eth0.leases  |  awk ' /fixed-address/ { lease = $2 }  END { printf lease } ' | sed     's/[";]//g')
+    echo "cloudstack-hostname: Hostname _localhost_ detected. Changing hostname and adding hosts."
+    printf " Hostname: $hostname\n FQDN: $fqdn\n IP: $ip"
+
+    # Update /etc/hosts
+    awk -v i="$ip" -v f="$fqdn" -v h="$hostname" "/^127/{x=1} !/^127/ && x { x=0; print i,f,h; } { print $0; }" /etc/hosts > /etc/hosts.dhcp.tmp
+    mv /etc/hosts /etc/hosts.dhcp.bak
+    mv /etc/hosts.dhcp.tmp /etc/hosts
+
+    # Rename Host
+    echo $hostname > /etc/hostname
+    hostname -b -F /etc/hostname
+    echo $hostname > /proc/sys/kernel/hostname
+    
+    # Recreate SSH2
+    export DEBIAN_FRONTEND=noninteractive
+    dpkg-reconfigure openssh-server
+fi
+### End of Script ###

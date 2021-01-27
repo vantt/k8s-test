@@ -1,0 +1,37 @@
+#cloud-config
+# https://cloudinit.readthedocs.io/en/latest/topics/examples.html
+timezone: Asia/Ho_Chi_Minh
+hostname: my_test
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDXFfc4N64cpmyNhgiL+rjEwRUYnBt3JNMkZ5RGBAdMyZNixqR53ui7jGG7WznsCKBbfcZDwpasTAg++IyiZH/yDMKAFdnUrt9ekzrR/ddEJOFICpoZq7GbpcO4R6Kpoc85M9Dt1gn2B8I7aDl1P768tG5CxmTiZBXcAQBXhcI6ETjid9jB4SbsY6FwdV0+/kp8M3g7wrD+dox3w6r+BNIZWvgDBaeKHXuWkkF4BYlVtZXVFv8DN9t7B48eSXkcc/q90a/fXSBuyFPcPpit/H5VYLgXQz++Jk3CcWbwdII2o6ApaX1HbGxRA1iXfzpvjXtciLaq3xgUjnmkqYvLgoKFV3SZiMM9GBDfCTODElGLesNpygLOnx20CeOHXHW9cjDTkLh9U9lr88fLInjdrHdhk+1y/C/wvd8lgAyJc6Ma/EgF1Uqk3QqsKHXqtfKSbaznymr6QXodayTct0Os+T9pTY5qsEkbfnbnwfGQ6dtKyTeV4nUR+ok+w6P1aetBk0s=
+package_update: false
+package_upgrade: false
+packages:
+  - locales-all
+  - curl
+users:
+  - default
+  - name: vantt
+    gecos: Tran Toan Van
+    groups: sudo
+    passwd: vantt
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDXFfc4N64cpmyNhgiL+rjEwRUYnBt3JNMkZ5RGBAdMyZNixqR53ui7jGG7WznsCKBbfcZDwpasTAg++IyiZH/yDMKAFdnUrt9ekzrR/ddEJOFICpoZq7GbpcO4R6Kpoc85M9Dt1gn2B8I7aDl1P768tG5CxmTiZBXcAQBXhcI6ETjid9jB4SbsY6FwdV0+/kp8M3g7wrD+dox3w6r+BNIZWvgDBaeKHXuWkkF4BYlVtZXVFv8DN9t7B48eSXkcc/q90a/fXSBuyFPcPpit/H5VYLgXQz++Jk3CcWbwdII2o6ApaX1HbGxRA1iXfzpvjXtciLaq3xgUjnmkqYvLgoKFV3SZiMM9GBDfCTODElGLesNpygLOnx20CeOHXHW9cjDTkLh9U9lr88fLInjdrHdhk+1y/C/wvd8lgAyJc6Ma/EgF1Uqk3QqsKHXqtfKSbaznymr6QXodayTct0Os+T9pTY5qsEkbfnbnwfGQ6dtKyTeV4nUR+ok+w6P1aetBk0s=
+
+runcmd:
+  - # fix locale
+  - sudo echo 'LANG=en_US.UTF-8' > /etc/defaults/locale
+  - sudo sed -n -e '/net\.bridge\.bridge-nf-call-iptables/!p' -e '$anet.bridge.bridge-nf-call-iptables=1' -i /etc/sysctl.conf  
+  - # disable swap
+  - sudo swapoff -a
+  - sudo systemctl disable swapfile.swap
+  - sudo systemctl disable dphys-swapfile
+  - # install docker
+  - # add users to docker group
+  - wget -qO- https://get.docker.com | sudo sh; 
+  - sudo usermod -aG docker debian
+  - sudo usermod -aG docker vantt
+
+final_message: "The system is finally up, after $UPTIME seconds. Sweet love from Vantt cheer."
